@@ -20,11 +20,13 @@ class ViewController: UIViewController,UITableViewDelegate,UITableViewDataSource
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: WeatherTableViewCell.identifier, for: indexPath) as! WeatherTableViewCell
         cell.config(with: Models[indexPath.row])
+        cell.backgroundColor = .clear
         return cell
     }
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return 100
     }
+    
     
     @IBOutlet var table:UITableView!
     var Models = [DailyWeatherEntry]()
@@ -40,12 +42,18 @@ class ViewController: UIViewController,UITableViewDelegate,UITableViewDataSource
         
         table.delegate = self
         table.dataSource = self
+        
+        
         // Do any additional setup after loading the view.
+        table.backgroundView?.contentMode = .scaleToFill
+        
+        
         
     }
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         setupLocation()
+        
     }
 
     //location
@@ -63,6 +71,8 @@ class ViewController: UIViewController,UITableViewDelegate,UITableViewDataSource
         }
     }
     
+    
+    
     func requestWeatherForLocation(){
         guard let currLocation = currentLocation else {
             return
@@ -75,6 +85,8 @@ class ViewController: UIViewController,UITableViewDelegate,UITableViewDataSource
         let url = "https://api.darksky.net/forecast/ddcc4ebb2a7c9930b90d9e59bda0ba7a/\(lat),\(long)?exclude=[flags,minutely]"
         //let url = "https://api.darksky.net/forecast/ddcc4ebb2a7c9930b90d9e59bda0ba7a/21.009480,107.273040"
         
+        
+        //Xử lý Json
         URLSession.shared.dataTask(with: URL(string: url)!, completionHandler: {data, response, error in
             //validation
             guard let data = data, error == nil else{
@@ -96,9 +108,11 @@ class ViewController: UIViewController,UITableViewDelegate,UITableViewDataSource
                 return
             }
 
+            //data for tableCell
             let entries = result.daily.data
-            self.Models.append(contentsOf: entries)
+            self.Models.append(contentsOf: entries!)
             
+            //data for tableHeader
             let current = result.currently
             self.currentWeather = current
             
@@ -109,157 +123,138 @@ class ViewController: UIViewController,UITableViewDelegate,UITableViewDataSource
                 self.table.tableHeaderView = self.createTableHeade()
             }
             
-            //update user interface
             }).resume()
         
+    //end request weather for location
     }
     func createTableHeade() -> UIView{
         let headerView = UIView(frame: CGRect(x: 0, y: 0, width: view.frame.size.width, height: view.frame.size.width))
-        headerView.backgroundColor = .cyan
         
         let weathertype = UIImageView(frame: CGRect(x: 10, y: 10, width: view.frame.size.width-20, height: headerView.frame.size.height/5))
         
-        //let locationLabel = UILabel(frame: CGRect(x: 10, y: 10, width: view.frame.size.width-20, height: headerView.frame.size.height/5))
         let summaryLabel = UILabel(frame: CGRect(x: 10, y: 20+weathertype.frame.size.height, width: view.frame.size.width-20, height: headerView.frame.size.height/5))
+        
         let tempLabel = UILabel(frame: CGRect(x: 10, y: 20+weathertype.frame.size.height+summaryLabel.frame.size.height, width: view.frame.size.width-20, height: headerView.frame.size.height/3))
         
+        let sunrisetimeLabel = UILabel(frame: CGRect(x: 10, y: 20+weathertype.frame.size.height+summaryLabel.frame.size.height+30, width: view.frame.size.width-20, height: headerView.frame.size.height/2))
+        
+        let sunsettimeLabel = UILabel(frame: CGRect(x: 10, y: 20+weathertype.frame.size.height+summaryLabel.frame.size.height+60, width: view.frame.size.width-20, height: headerView.frame.size.height/2))
+        
         summaryLabel.textAlignment = .center
-        //locationLabel.textAlignment = .center
         tempLabel.textAlignment = .center
         
         headerView.addSubview(weathertype)
         headerView.addSubview(summaryLabel)
         headerView.addSubview(tempLabel)
+        headerView.addSubview(sunrisetimeLabel)
+        headerView.addSubview(sunsettimeLabel)
         
+        sunrisetimeLabel.text = "Sunrise Time : \(getTimeforDate(Date(timeIntervalSince1970: Double(Models[0].sunriseTime )))) "
+        sunsettimeLabel.text = "Sunset Time : \(getTimeforDate(Date(timeIntervalSince1970: Double(Models[0].sunsetTime ))))"
         
-       
         weathertype.contentMode = .scaleAspectFit
         summaryLabel.text = currentWeather.summary
         tempLabel.text = "\( Int((Double(currentWeather.temperature)-32)/1.8))°C"
         let icon = currentWeather.icon.lowercased()
         if icon.contains("cloud"){
             weathertype.image = UIImage(named: "cloud")
+            table.backgroundView = UIImageView(image: UIImage(named: "cloud-img"))
         }
         if icon.contains("rain")
         {
             weathertype.image = UIImage(named: "rain")
+            table.backgroundView = UIImageView(image: UIImage(named: "rain-img"))
         }
         if icon.contains("clear")
         {
             weathertype.image = UIImage(named: "clear")
+            table.backgroundView = UIImageView(image: UIImage(named: "sun-img"))
         }
         
         tempLabel.font = UIFont(name: "Helvetica-Bold", size: 34)
+        sunrisetimeLabel.font = UIFont(name: "Helvetica-Bold", size: 20)
+        sunsettimeLabel.font = UIFont(name: "Helvetica-Bold", size: 20)
 
         
-        
         return headerView
+    }
+    
+    func getTimeforDate(_ date:Date?) -> String{
+        guard  let inputdate = date else {
+            return ""
+        }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM dd YYYY ,HH:mm" // Time
+        return formatter.string(from: inputdate)
     }
 
 }
 struct WeatherResponse: Codable {
-    let latitude: Float
-    let longitude: Float
-    let timezone: String
-    let currently: CurrentWeather
-    let hourly: HourlyWeather
-    let daily: DailyWeather
-    let offset: Float
+    let latitude: Float!
+    let longitude: Float!
+    let timezone: String!
+    let currently: CurrentWeather!
+    let hourly: HourlyWeather!
+    let daily: DailyWeather!
+    let offset: Float!
 }
 
 struct CurrentWeather: Codable {
-    let time: Int
-    let summary: String
-    let icon: String
-    let nearestStormDistance: Int
-    let nearestStormBearing: Int
-    let precipIntensity: Int
-    let precipProbability: Int
-    let temperature: Double
-    let apparentTemperature: Double
-    let dewPoint: Double
-    let humidity: Double
-    let pressure: Double
-    let windSpeed: Double
-    let windGust: Double
-    let windBearing: Int
-    let cloudCover: Double
-    let uvIndex: Int
-    let visibility: Double
-    let ozone: Double
+    let time: Int!
+    let summary: String!
+    let icon: String!
+//    let precipIntensity: Int!
+//    let precipProbability: Int!
+    let temperature: Double!
+//    let apparentTemperature: Double!
+//    let windBearing: Int!
+//    let cloudCover: Double!
+//    let uvIndex: Int!
+//    let visibility: Double!
+//    let ozone: Double!
 }
 
 struct DailyWeather: Codable {
-    let summary: String
-    let icon: String
-    let data: [DailyWeatherEntry]
+    let summary: String!
+    let icon: String!
+    let data: [DailyWeatherEntry]!
 }
 
 struct DailyWeatherEntry: Codable {
-    let time: Int
-    let summary: String
-    let icon: String
-    let sunriseTime: Int
-    let sunsetTime: Int
-    let moonPhase: Double
-    let precipIntensity: Float
-    let precipIntensityMax: Float
-    let precipIntensityMaxTime: Int
-    let precipProbability: Double
-    let precipType: String?
-    let temperatureHigh: Double
-    let temperatureHighTime: Int
-    let temperatureLow: Double
-    let temperatureLowTime: Int
-    let apparentTemperatureHigh: Double
-    let apparentTemperatureHighTime: Int
-    let apparentTemperatureLow: Double
-    let apparentTemperatureLowTime: Int
-    let dewPoint: Double
-    let humidity: Double
-    let pressure: Double
-    let windSpeed: Double
-    let windGust: Double
-    let windGustTime: Int
-    let windBearing: Int
-    let cloudCover: Double
-    let uvIndex: Int
-    let uvIndexTime: Int
-    let visibility: Double
-    let ozone: Double
-    let temperatureMin: Double
-    let temperatureMinTime: Int
-    let temperatureMax: Double
-    let temperatureMaxTime: Int
-    let apparentTemperatureMin: Double
-    let apparentTemperatureMinTime: Int
-    let apparentTemperatureMax: Double
-    let apparentTemperatureMaxTime: Int
+    let time: Int!
+    let summary: String!
+    let icon: String!
+    let sunriseTime: Int!
+    let sunsetTime: Int!
+    let temperatureHigh: Double!
+    let temperatureHighTime: Int!
+    let temperatureLow: Double!
+    let temperatureLowTime: Int!
 }
 
 struct HourlyWeather: Codable {
-    let summary: String
-    let icon: String
-    let data: [HourlyWeatherEntry]
+    let summary: String!
+    let icon: String!
+    let data: [HourlyWeatherEntry]!
 }
 
 struct HourlyWeatherEntry: Codable {
-    let time: Int
-    let summary: String
-    let icon: String
-    let precipIntensity: Float
-    let precipProbability: Double
-    let precipType: String?
-    let temperature: Double
-    let apparentTemperature: Double
-    let dewPoint: Double
-    let humidity: Double
-    let pressure: Double
-    let windSpeed: Double
-    let windGust: Double
-    let windBearing: Int
-    let cloudCover: Double
-    let uvIndex: Int
-    let visibility: Double
-    let ozone: Double
+    let time: Int!
+    let summary: String!
+    let icon: String!
+//    let precipIntensity: Float!
+//    let precipProbability: Double!
+//    let precipType: String?
+//    let temperature: Double!
+//    let apparentTemperature: Double!
+//    let dewPoint: Double!
+//    let humidity: Double!
+//    let pressure: Double!
+//    let windSpeed: Double!
+//    let windGust: Double!
+//    let windBearing: Int!
+//    let cloudCover: Double!
+//    let uvIndex: Int!
+//    let visibility: Double!
+//    let ozone: Double!
 }

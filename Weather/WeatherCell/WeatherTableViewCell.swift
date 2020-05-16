@@ -19,7 +19,7 @@ class WeatherTableViewCell: UITableViewCell {
 
     override func awakeFromNib() {
         super.awakeFromNib()
-        backgroundColor = .gray
+//        backgroundColor = .gray
     }
 
     override func setSelected(_ selected: Bool, animated: Bool) {
