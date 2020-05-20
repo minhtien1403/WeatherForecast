@@ -36,8 +36,7 @@ class ViewController: UIViewController,UITableViewDelegate,UITableViewDataSource
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        //registry 2 cell
-        table.register(HourlyTableViewCell.nib(), forCellReuseIdentifier: HourlyTableViewCell.identifier)
+        //registry cell
         table.register(WeatherTableViewCell.nib(), forCellReuseIdentifier: WeatherTableViewCell.identifier)
         
         table.delegate = self
@@ -194,7 +193,6 @@ struct WeatherResponse: Codable {
     let longitude: Float!
     let timezone: String!
     let currently: CurrentWeather!
-    let hourly: HourlyWeather!
     let daily: DailyWeather!
     let offset: Float!
 }
@@ -203,15 +201,8 @@ struct CurrentWeather: Codable {
     let time: Int!
     let summary: String!
     let icon: String!
-//    let precipIntensity: Int!
-//    let precipProbability: Int!
     let temperature: Double!
-//    let apparentTemperature: Double!
-//    let windBearing: Int!
-//    let cloudCover: Double!
-//    let uvIndex: Int!
-//    let visibility: Double!
-//    let ozone: Double!
+
 }
 
 struct DailyWeather: Codable {
@@ -232,29 +223,4 @@ struct DailyWeatherEntry: Codable {
     let temperatureLowTime: Int!
 }
 
-struct HourlyWeather: Codable {
-    let summary: String!
-    let icon: String!
-    let data: [HourlyWeatherEntry]!
-}
 
-struct HourlyWeatherEntry: Codable {
-    let time: Int!
-    let summary: String!
-    let icon: String!
-//    let precipIntensity: Float!
-//    let precipProbability: Double!
-//    let precipType: String?
-//    let temperature: Double!
-//    let apparentTemperature: Double!
-//    let dewPoint: Double!
-//    let humidity: Double!
-//    let pressure: Double!
-//    let windSpeed: Double!
-//    let windGust: Double!
-//    let windBearing: Int!
-//    let cloudCover: Double!
-//    let uvIndex: Int!
-//    let visibility: Double!
-//    let ozone: Double!
-}
